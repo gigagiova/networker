@@ -12,7 +12,7 @@ db_name = os.getenv('DB_NAME', 'networker')
 db_user = os.getenv('DB_USER', 'postgres')
 db_password = os.getenv('DB_PASSWORD', 'postgres')
 db_host = os.getenv('DB_HOST', 'localhost')
-db_port = int(os.getenv('DB_PORT', '5433'))  # Get port from environment
+db_port = int(os.getenv('DB_PORT', '5433'))
 
 print(f"--- Connecting to: {db_host}:{db_port}/{db_name} as {db_user} ---")
 
