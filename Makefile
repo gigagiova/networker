@@ -1,9 +1,5 @@
-# PostgreSQL Docker configuration
-DB_NAME = networker
-DB_USER = postgres
-DB_PASSWORD = postgres
-DB_PORT = 5433
-CONTAINER_NAME = networker-postgres
+# Include environment variables from .env file
+include .env
 
 # Default target
 .PHONY: help
@@ -14,9 +10,24 @@ help:
 	@echo "  make restart      - Restart PostgreSQL container"
 	@echo "  make logs         - Show PostgreSQL container logs"
 	@echo "  make psql         - Connect to PostgreSQL with psql"
+	@echo "  make shell        - Open bash shell in PostgreSQL container"
 	@echo "  make status       - Check if PostgreSQL container is running"
 	@echo "  make env          - Print database connection environment variables"
-	@echo "  make setup-env    - Create .env file from template with correct DB settings"
+	@echo "  make show [table] - Show last 10 rows from specified table"
+
+# Show last 10 rows from specified table
+.PHONY: show
+show:
+	@if [ -z "$(filter-out show,$(MAKECMDGOALS))" ]; then \
+		echo "Usage: make show <table_name>"; \
+		echo "Example: make show sessions"; \
+		exit 1; \
+	fi
+	@docker exec -i networker-postgres psql -U $(DB_USER) -d $(DB_NAME) -c "SELECT * FROM $(filter-out show,$(MAKECMDGOALS)) ORDER BY id DESC LIMIT 10;"
+
+# Catch table name argument
+%:
+	@:
 
 # Start PostgreSQL in Docker
 .PHONY: start
@@ -26,9 +37,9 @@ start:
 	docker run --name $(CONTAINER_NAME) \
 		-e POSTGRES_PASSWORD=$(DB_PASSWORD) \
 		-e POSTGRES_DB=$(DB_NAME) \
-		-p $(DB_PORT):5432 \
+		-p $(DB_PORT):5433 \
 		-v networker-pgdata:/var/lib/postgresql/data \
-		-d postgres:14 || true
+		-d postgres:14
 	@echo "PostgreSQL is running on port $(DB_PORT)"
 	@echo "Connection string: postgresql://$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)/$(DB_NAME)"
 
@@ -62,34 +73,12 @@ shell:
 status:
 	@docker ps -f name=$(CONTAINER_NAME)
 
-# Export the DATABASE_URL environment variable
-.PHONY: env
-env:
-	@echo "export DB_NAME=$(DB_NAME)"
-	@echo "export DB_USER=$(DB_USER)"
-	@echo "export DB_PASSWORD=$(DB_PASSWORD)"
-	@echo "export DB_HOST=localhost"
-	@echo "export DB_PORT=$(DB_PORT)"
-	@echo "export DATABASE_URL=postgresql://$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)/$(DB_NAME)"
-	@echo "export ENVIRONMENT=local"
-
-# Set up .env file from template
-.PHONY: setup-env
-setup-env:
-	@if [ -f .env ]; then \
-		echo ".env file already exists. Do you want to overwrite it? (y/n)"; \
-		read answer; \
-		if [ "$$answer" != "y" ]; then \
-			echo "Aborted."; \
-			exit 1; \
-		fi; \
-	fi
-	@echo "Creating .env file..."
-	@cp .env.example .env
-	@sed -i '' 's/DB_NAME=.*/DB_NAME=$(DB_NAME)/g' .env
-	@sed -i '' 's/DB_USER=.*/DB_USER=$(DB_USER)/g' .env
-	@sed -i '' 's/DB_PASSWORD=.*/DB_PASSWORD=$(DB_PASSWORD)/g' .env
-	@sed -i '' 's/DB_PORT=.*/DB_PORT=$(DB_PORT)/g' .env
-	@sed -i '' 's/DATABASE_URL=.*/DATABASE_URL=postgresql:\/\/$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)\/$(DB_NAME)/g' .env
-	@echo "Environment file created successfully"
-	@echo "Don't forget to add your API keys in the .env file"
+# Add to Makefile
+.PHONY: pgadmin
+pgadmin:
+	docker run --name networker-pgadmin -p 5050:80 \
+		-e PGADMIN_DEFAULT_EMAIL=admin@example.com \
+		-e PGADMIN_DEFAULT_PASSWORD=admin \
+		-d dpage/pgadmin4
+	@echo "pgAdmin is running at http://localhost:5050"
+	@echo "Login with admin@example.com / admin"

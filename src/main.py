@@ -2,6 +2,8 @@ import typer
 import os
 from typing import Optional
 from src.database import init_db, Candidate
+from src.scraper import GitHubAPI
+
 
 # Initialize Typer app, calling init_db on startup
 app = typer.Typer(help="Talent scraper", callback=init_db)
@@ -17,13 +19,10 @@ def scrape(
     """
     typer.echo(f"Scraping {count} GitHub profiles")
     
-    # TODO: Implement scraping logic
-    # 1. Scrape GitHub profiles
-    # 2. Send profiles to Claude for analysis
-    # 3. Store results in database
-    # 4. Generate report
-    
-    typer.echo("Scraping completed successfully!")
+    users = GitHubAPI.search_users(count=count)
+    for user in users:
+        print(user)
+        github_url = user["html_url"]
 
 
 if __name__ == "__main__":

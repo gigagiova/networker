@@ -12,17 +12,17 @@ db_name = os.getenv('DB_NAME', 'networker')
 db_user = os.getenv('DB_USER', 'postgres')
 db_password = os.getenv('DB_PASSWORD', 'postgres')
 db_host = os.getenv('DB_HOST', 'localhost')
-forced_port = 5433 # HARDCODE the port
+db_port = int(os.getenv('DB_PORT', '5433'))  # Get port from environment
 
-print(f"--- HARDCODED CONNECT TO: {db_host}:{forced_port}/{db_name} as {db_user} ---")
+print(f"--- Connecting to: {db_host}:{db_port}/{db_name} as {db_user} ---")
 
-# Directly initialize the database connection, HARDCODING the port
+# Directly initialize the database connection
 db = PostgresqlDatabase(
     db_name,
     user=db_user,
     password=db_password,
     host=db_host,
-    port=forced_port # Use the hardcoded port
+    port=db_port
 )
 # --- End Simplified Config ---
 
@@ -55,7 +55,7 @@ def init_db():
     
     try:
         db.create_tables(models, safe=True)
-        print(f"Database initialized successfully at {db_host}:{forced_port}/{db_name}")
+        print(f"Database initialized successfully at {db_host}:{db_port}/{db_name}")
     except Exception as e:
         print(f"Error creating tables: {e}")
         return None

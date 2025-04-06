@@ -58,10 +58,10 @@ DB_NAME=networker
 DB_USER=postgres
 DB_PASSWORD=postgres
 DB_HOST=localhost
-DB_PORT=5432
+DB_PORT=5433
 
 # Or complete URL (used by Heroku)
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/networker
+DATABASE_URL=postgresql://postgres:postgres@localhost:5433/networker
 ```
 
 ### Makefile Commands

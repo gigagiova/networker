@@ -1,5 +1,4 @@
-# Export all models and the base
-from .base import BaseModel
 from .candidate import Candidate
+from .session import Session
 
-__all__ = ['BaseModel', 'Candidate']
+__all__ = ["Candidate", "Session"]
