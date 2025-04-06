@@ -55,10 +55,10 @@ class GitHubAPI:
         query = " ".join([
             "type:user",
             "repos:>2",
-            "followers:<50",
+            "followers:<100",
             f"created:>={GitHubAPI.get_last_created_at().strftime('%Y-%m-%d')}",
             "location:italy location:italia location:milan location:milano in:location",
-            "sort:repositories-desc"
+            "sort:created-desc"
         ])
         
         url = f"{GitHubAPI.base_url}/search/users"

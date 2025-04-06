@@ -19,9 +19,14 @@ def scrape(
     """
     typer.echo(f"Scraping {count} GitHub profiles")
     
+    # Get users from GitHub API search
     users = GitHubAPI.search_users(count=count)
-    for user in users:
-        print(user["html_url"], "SATISFIES")
+    
+    # Save matching users to a text file, appending each URL
+    with open("profiles.txt", "a") as f:
+        for user in users:
+            f.write(f"{user['html_url']} MATCHES\n")
+            print(f"{user['html_url']} MATCHES")
 
 
 if __name__ == "__main__":

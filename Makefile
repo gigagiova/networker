@@ -43,13 +43,30 @@ reset-db:
 .PHONY: start
 start:
 	@echo "Starting PostgreSQL Docker container..."
-	@docker ps -q -f name=$(CONTAINER_NAME) > /dev/null || \
-	docker run --name $(CONTAINER_NAME) \
-		-e POSTGRES_PASSWORD=$(DB_PASSWORD) \
-		-e POSTGRES_DB=$(DB_NAME) \
-		-p $(DB_PORT):5433 \
-		-v networker-pgdata:/var/lib/postgresql/data \
-		-d postgres:14
+	@if ! docker ps --format '{{.Names}}' | grep -q "^$(CONTAINER_NAME)$$"; then \
+		if docker ps -a --format '{{.Names}}' | grep -q "^$(CONTAINER_NAME)$$"; then \
+			echo "Removing stopped container..."; \
+			docker rm $(CONTAINER_NAME); \
+		fi; \
+		echo "Creating new container..."; \
+		docker run --name $(CONTAINER_NAME) \
+			-e POSTGRES_PASSWORD=$(DB_PASSWORD) \
+			-e POSTGRES_DB=$(DB_NAME) \
+			-e POSTGRES_INITDB_ARGS="--data-checksums" \
+			-e POSTGRES_PORT=$(DB_PORT) \
+			-p $(DB_PORT):$(DB_PORT) \
+			-v networker-pgdata:/var/lib/postgresql/data \
+			-d postgres:14 \
+			-c "port=$(DB_PORT)" > /dev/null; \
+		echo "Waiting for container to be ready..."; \
+		sleep 3; \
+		if ! docker ps --format '{{.Names}}' | grep -q "^$(CONTAINER_NAME)$$"; then \
+			echo "Failed to start container. Check docker logs for details."; \
+			exit 1; \
+		fi; \
+	else \
+		echo "Container is already running."; \
+	fi
 	@echo "PostgreSQL is running on port $(DB_PORT)"
 	@echo "Connection string: postgresql://$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)/$(DB_NAME)"
 
@@ -57,7 +74,16 @@ start:
 .PHONY: stop
 stop:
 	@echo "Stopping PostgreSQL container..."
-	@docker stop $(CONTAINER_NAME) || true
+	@if docker ps -a --format '{{.Names}}' | grep -q "^$(CONTAINER_NAME)$$"; then \
+		if docker ps --format '{{.Names}}' | grep -q "^$(CONTAINER_NAME)$$"; then \
+			echo "Stopping running container..."; \
+			docker stop $(CONTAINER_NAME); \
+		fi; \
+		echo "Removing container..."; \
+		docker rm $(CONTAINER_NAME); \
+	else \
+		echo "Container $(CONTAINER_NAME) does not exist"; \
+	fi
 
 # Restart PostgreSQL container
 .PHONY: restart
