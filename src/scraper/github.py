@@ -54,10 +54,10 @@ class GitHubAPI:
         # Search for users created after our last scraped date
         query = " ".join([
             "type:user",
-            "followers:<50",
-            "location:Italy",
             "repos:>2",
-            "created:2020-01-01..2024-12-31",
+            "followers:<50",
+            f"created:>={GitHubAPI.get_last_created_at().strftime('%Y-%m-%d')}",
+            "location:italy location:italia location:milan location:milano in:location",
             "sort:repositories-desc"
         ])
         

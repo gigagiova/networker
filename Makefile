@@ -29,6 +29,16 @@ show:
 %:
 	@:
 
+
+# Reset the database by dropping and recreating it
+.PHONY: reset-db
+reset-db:
+	@echo "Resetting database..."
+	@docker exec -i $(CONTAINER_NAME) psql -U $(DB_USER) -c "DROP DATABASE IF EXISTS $(DB_NAME);"
+	@docker exec -i $(CONTAINER_NAME) psql -U $(DB_USER) -c "CREATE DATABASE $(DB_NAME);"
+	@echo "Database $(DB_NAME) has been reset"
+
+
 # Start PostgreSQL in Docker
 .PHONY: start
 start:
