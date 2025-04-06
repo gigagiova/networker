@@ -2,7 +2,7 @@
 DB_NAME = networker
 DB_USER = postgres
 DB_PASSWORD = postgres
-DB_PORT = 5432
+DB_PORT = 5433
 CONTAINER_NAME = networker-postgres
 
 # Default target
@@ -14,7 +14,6 @@ help:
 	@echo "  make restart      - Restart PostgreSQL container"
 	@echo "  make logs         - Show PostgreSQL container logs"
 	@echo "  make psql         - Connect to PostgreSQL with psql"
-	@echo "  make shell        - Open bash shell in PostgreSQL container"
 	@echo "  make status       - Check if PostgreSQL container is running"
 	@echo "  make env          - Print database connection environment variables"
 	@echo "  make setup-env    - Create .env file from template with correct DB settings"
@@ -29,7 +28,7 @@ start:
 		-e POSTGRES_DB=$(DB_NAME) \
 		-p $(DB_PORT):5432 \
 		-v networker-pgdata:/var/lib/postgresql/data \
-		-d postgres:14
+		-d postgres:14 || true
 	@echo "PostgreSQL is running on port $(DB_PORT)"
 	@echo "Connection string: postgresql://$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)/$(DB_NAME)"
 
@@ -91,5 +90,6 @@ setup-env:
 	@sed -i '' 's/DB_USER=.*/DB_USER=$(DB_USER)/g' .env
 	@sed -i '' 's/DB_PASSWORD=.*/DB_PASSWORD=$(DB_PASSWORD)/g' .env
 	@sed -i '' 's/DB_PORT=.*/DB_PORT=$(DB_PORT)/g' .env
+	@sed -i '' 's/DATABASE_URL=.*/DATABASE_URL=postgresql:\/\/$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)\/$(DB_NAME)/g' .env
 	@echo "Environment file created successfully"
-	@echo "Don't forget to add your API keys in the .env file" 
+	@echo "Don't forget to add your API keys in the .env file"

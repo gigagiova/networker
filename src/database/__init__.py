@@ -1,3 +1,5 @@
 # Database package for Networker
-from src.database.db import db, init_db
-from src.database.models import BaseModel, Candidate 
+from .db import db, init_db, connect_db
+from .models import BaseModel, Candidate
+
+__all__ = ['db', 'init_db', 'connect_db', 'BaseModel', 'Candidate'] 

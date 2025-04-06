@@ -1,56 +1,30 @@
 import os
 import time
-from urllib.parse import urlparse
 from peewee import PostgresqlDatabase
-from playhouse.pool import PooledPostgresqlDatabase
+from dotenv import load_dotenv
 
-# Try to get database config from individual environment variables first
+# Load environment variables first
+load_dotenv()
+
+# --- Simplified Local Development Config ---
+# Force using variables from .env or these defaults
 db_name = os.getenv('DB_NAME', 'networker')
 db_user = os.getenv('DB_USER', 'postgres')
 db_password = os.getenv('DB_PASSWORD', 'postgres')
 db_host = os.getenv('DB_HOST', 'localhost')
-db_port = int(os.getenv('DB_PORT', '5432'))
+forced_port = 5433 # HARDCODE the port
 
-# If DATABASE_URL is set, override the individual settings
-database_url = os.getenv('DATABASE_URL')
-if database_url:
-    # Handle Heroku's postgres:// vs postgresql:// issue
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://')
-    
-    # Parse database URL
-    url = urlparse(database_url)
-    db_name = url.path[1:]
-    db_user = url.username
-    db_password = url.password
-    db_host = url.hostname
-    db_port = url.port or 5432
+print(f"--- HARDCODED CONNECT TO: {db_host}:{forced_port}/{db_name} as {db_user} ---")
 
-# Set up database configuration
-db_config = {
-    'database': db_name,
-    'user': db_user,
-    'password': db_password,
-    'host': db_host,
-    'port': db_port,
-}
-
-# Enable SSL in production (Heroku requires this)
-if os.getenv('ENVIRONMENT') == 'production' or 'herokuapp.com' in db_host:
-    db_config['sslmode'] = 'require'
-
-# Use connection pooling in production
-is_production = os.getenv('ENVIRONMENT') == 'production' or 'herokuapp.com' in db_host
-if is_production:
-    db = PooledPostgresqlDatabase(
-        db_name,
-        max_connections=32,
-        stale_timeout=300,
-        **db_config
-    )
-else:
-    # Standard connection for local development
-    db = PostgresqlDatabase(**db_config)
+# Directly initialize the database connection, HARDCODING the port
+db = PostgresqlDatabase(
+    db_name,
+    user=db_user,
+    password=db_password,
+    host=db_host,
+    port=forced_port # Use the hardcoded port
+)
+# --- End Simplified Config ---
 
 def connect_db():
     """Connect to the database with retry logic"""
@@ -63,12 +37,13 @@ def connect_db():
 
 def init_db():
     """Initialize the database and create tables if they don't exist"""
-    from src.database.models import BaseModel
+    from src.database.models.base import BaseModel
+    from src.database.models.candidate import Candidate
     
-    # Get all model classes that inherit from BaseModel
     models = BaseModel.__subclasses__()
-    
-    # Try to connect with retries
+    if not models:
+        models = [Candidate] 
+
     for attempt in range(3):
         if connect_db():
             break
@@ -78,8 +53,11 @@ def init_db():
         print("Failed to connect to database after 3 attempts")
         return None
     
-    # Create tables
-    db.create_tables(models, safe=True)
-    print(f"Database initialized successfully at {db_host}:{db_port}/{db_name}")
-    
+    try:
+        db.create_tables(models, safe=True)
+        print(f"Database initialized successfully at {db_host}:{forced_port}/{db_name}")
+    except Exception as e:
+        print(f"Error creating tables: {e}")
+        return None
+
     return db 

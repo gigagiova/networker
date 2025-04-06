@@ -1,3 +1,5 @@
-from src.database.models.candidate import Candidate 
+# Export all models and the base
+from .base import BaseModel
+from .candidate import Candidate
 
-__all__ = ["Candidate"]
+__all__ = ['BaseModel', 'Candidate']
